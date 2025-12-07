@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from aoc_helper import run_day
+
 def isLaserAbove(row, col, lines):
     return (lines[row - 1][col] == '|' or lines[row - 1][col] == 'S')
 
@@ -8,10 +16,7 @@ def insertCinStr(line, pos, char):
     return lineBefore + char + lineAfter
     
 
-def simulateStep(lines):
-    
-    lines = lines
-    
+def simulateStep(lines):    
     splits = 0
     
     for row in range(len(lines)):
@@ -34,36 +39,28 @@ def simulateStep(lines):
     
     return lines, splits
 
+
 memo = {}
 
-def simulateQStep(lines, row, col, splitsAcc):
+def simulateQStep(lines, row, col):
     if (row, col) in memo:
         return memo[(row, col)]
-    
-    lines = lines
-    
-    splits = splitsAcc
+                    
+    char = lines[row][col]
         
-    line = lines[row]
-    
-    char = line[col]
-    
-    #print(f'''Current line: {line}, row: {row}, col: {col}''')
-    
     if row != len(lines) - 1: # Don't simulate the first line
         if char == '.': # Move laser down
-            result = simulateQStep(lines, row + 1, col, splits)
+            result = simulateQStep(lines, row + 1, col)
             
         elif char == '^': # Perform split
-            
             leftPath = 0
             rightPath = 0
 
             if col - 1 >= 0:
-                leftPath = simulateQStep(lines, row, col - 1, splits)
+                leftPath = simulateQStep(lines, row, col - 1)
                 
-            if col + 1 < len(line):
-                rightPath = simulateQStep(lines, row, col + 1, splits)
+            if col + 1 < len(lines[row]):
+                rightPath = simulateQStep(lines, row, col + 1)
                 
             result = leftPath + rightPath
         else:
@@ -73,39 +70,30 @@ def simulateQStep(lines, row, col, splitsAcc):
         
     memo[(row, col)] = result # Store pos
  
-    return result          
-    
-def findS(line):
-    
+    return result   
+
+def findStartIndex(line):
     for c in range(len(line)):
         if line[c] == 'S':
             return c
         
     print("Error, no start found!!")
     return -1
-        
-def printGraphic(lines):
-    for l in lines:
-        print(l)
-            
-            
-            
 
-with open("day_7/input.txt") as f:
-    lines = f.read().splitlines()
-        
-    #printGraphic(lines)
+def solve_part1(lines):
+    # Your solution here
+    newLines, splits = simulateStep(lines)
     
-    #print("")
+    return splits
 
-    
-    #newLines, splits = simulateStep(lines)
-    
-    #printGraphic(newLines)
-    #print(f"Part 1: Total amount of splits: {splits}")
-    
-    
-    
-    totalPaths = simulateQStep(lines, 1, findS(lines[0]), 0)
-    
-    print(f"Part 2: Total amount of paths: {totalPaths}")
+def solve_part2(lines):
+    # Your solution here
+    return simulateQStep(lines, 1, findStartIndex(lines[0]))
+
+run_day(
+    day=7,
+    part1_solver=solve_part1,
+    part2_solver=solve_part2,
+    test_part1=21,  # Expected test answers
+    test_part2=40
+)
