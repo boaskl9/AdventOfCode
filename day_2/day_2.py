@@ -1,83 +1,88 @@
-import time
+import sys
+from pathlib import Path
 
-f = open("day_2/day_2_input.txt")
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-splitLine = f.readline().split(',')
+from aoc_helper import run_day
 
-runningTotalPart1 = 0
-runningTotalPart2 = 0
-
-# =============== PART 1 Start ===============
 def isEven(num):
     return num % 2 == 0
 
 def checkRangePart1(start, end):
-    global runningTotalPart1
-        
+    total = 0
     for num in range(start, end + 1, 1):
-        numStr = str(num)       # Current number as a string
-        strLen = len(numStr)    # Lenth of that string
-        
-        if isEven(strLen):        
+        numStr = str(num)
+        strLen = len(numStr)
+
+        if isEven(strLen):
             halfLen = int(strLen / 2)
-                    
+
             if numStr[:halfLen] == numStr[halfLen:]:
-                runningTotalPart1 += num  # Found an invalid ID
-# =============== PART 1 End =================
-  
-# =============== PART 2 Start ===============
+                total += num
+    return total
+
 def checkNum(num):
-    global runningTotalPart2
-    
     numStr = str(num)
-    
+
     for subStrLen in range(1, 50):
         if len(numStr) == subStrLen:
             break
-        
-        subsections = (len(numStr) / subStrLen) 
-        
+
+        subsections = (len(numStr) / subStrLen)
+
         parts = []
-        
+
         if subsections == int(subsections):
             for j in range(0, int(subsections)):
                 parts.append(numStr[j*subStrLen:subStrLen + j*subStrLen])
-        
+
         if len(parts) == 0:
             continue
-        
+
         allSame = True
-        
         p0 = parts[0]
-        
+
         for p in parts:
             if p != p0:
                 allSame = False
                 break
-            
+
         if allSame:
-          runningTotalPart2 += int(num) # Found an invalid ID
-          break
-            
-def checkRangePart2(start, end):    
+            return int(num)
+
+    return 0
+
+def checkRangePart2(start, end):
+    total = 0
     for num in range(start, end + 1, 1):
-        checkNum(num)            
-# =============== PART 2 End =================
-                
-# Execute part 1 
-startPart1 = time.perf_counter()
-for s in splitLine:
-    ranges = s.split('-')
-    checkRangePart1(int(ranges[0]),int(ranges[1]))
+        total += checkNum(num)
+    return total
 
-endPart1 = time.perf_counter()
-print(f"Part 1 result: {runningTotalPart1} - Execution time: {endPart1 - startPart1:.6f} seconds")
+def solve_part1(lines):
+    splitLine = lines[0].split(',')
+    runningTotal = 0
 
-# Execute part 2
-startPart2 = time.perf_counter()
-for s in splitLine:
-    ranges = s.split('-')
-    checkRangePart2(int(ranges[0]),int(ranges[1]))
+    for s in splitLine:
+        ranges = s.split('-')
+        runningTotal += checkRangePart1(int(ranges[0]), int(ranges[1]))
 
-endPart2 = time.perf_counter()
-print(f"Part 2 result: {runningTotalPart2} - Execution time: {endPart2 - startPart2:.6f} seconds")
+    return runningTotal
+
+def solve_part2(lines):
+    splitLine = lines[0].split(',')
+    runningTotal = 0
+
+    for s in splitLine:
+        ranges = s.split('-')
+        runningTotal += checkRangePart2(int(ranges[0]), int(ranges[1]))
+
+    return runningTotal
+
+run_day(
+    day=2,
+    part1_solver=solve_part1,
+    part2_solver=solve_part2,
+    test_part1=None,  # Add expected test answer if known
+    test_part2=None
+)

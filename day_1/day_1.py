@@ -1,76 +1,108 @@
-import time
+import sys
+from pathlib import Path
 
-start = time.perf_counter()
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# ----- your code here -----
+from aoc_helper import run_day
 
-f = open("day_1_input.txt")
+def solve_part1(lines):
+    minvalue = 0
+    maxvalue = 99
+    counter = 50
+    passZeroCounter = 0
+    landOnZeroCounter = 0
 
+    def add(amount):
+        nonlocal counter, passZeroCounter
 
-lines=f.readlines()
+        for i in range(amount):
+            counter += 1
+            if counter > maxvalue:
+                counter = minvalue
+                passZeroCounter += 1
 
-minvalue = 0
-maxvalue = 99
+    def sub(amount):
+        nonlocal counter, passZeroCounter
 
-counter = 50 
-passZeroCounter = 0 
-landOnZeroCounter = 0
+        for i in range(amount):
+            counter -= 1
+            if counter == 0:
+                passZeroCounter += 1
+            if counter < minvalue:
+                counter = maxvalue
 
-def add(amount):
-    global counter
-    global passZeroCounter
-    
-    for i in range(amount):
-        counter += 1
+    def rotate(amount, isPositive):
+        if isPositive:
+            add(amount)
+        else:
+            sub(amount)
 
-        if counter > maxvalue:
-            counter = minvalue
-            passZeroCounter += 1
-            #print("Increased Pass Zero Counter!")
-            
-def sub(amount):
-    global counter
-    global passZeroCounter
+    def parse(inputLine):
+        direction = inputLine[0]
+        amount = int(inputLine[1:])
 
-    for i in range(amount):
-        counter -= 1
+        if direction == "R":
+            rotate(amount, True)
+        elif direction == "L":
+            rotate(amount, False)
 
+    for l in lines:
+        parse(l)
         if counter == 0:
-            passZeroCounter += 1
-            #print("Increased Pass Zero Counter!")
-        
-        if counter < minvalue:
-            counter = maxvalue
+            landOnZeroCounter += 1
 
-def rotate(amount,isPositive):
-    if isPositive:
-      add(amount)
-    else:
-      sub(amount)
+    return landOnZeroCounter
 
-def parse(inputLine):
-    direction = inputLine[0] 
-    amount = int(inputLine[1:]) 
+def solve_part2(lines):
+    minvalue = 0
+    maxvalue = 99
+    counter = 50
+    passZeroCounter = 0
 
-    if direction == "R" : 
-        rotate(amount,True)
-    elif direction == "L" :
-        rotate(amount,False)
-    else: print ("Not Valid")
+    def add(amount):
+        nonlocal counter, passZeroCounter
 
-for l in lines:
-    #print("Counter currently at: " + str(counter))
-    #print("current rotation: " +  l)
-    #input("press enter") #uncomment to be able to go step by step
-    parse(l)
+        for i in range(amount):
+            counter += 1
+            if counter > maxvalue:
+                counter = minvalue
+                passZeroCounter += 1
 
-    if counter == 0:
-        landOnZeroCounter += 1
+    def sub(amount):
+        nonlocal counter, passZeroCounter
 
-print ("Day 1 part 1: " + str(landOnZeroCounter))
-print ("Day 1 part 2: " + str(passZeroCounter))
+        for i in range(amount):
+            counter -= 1
+            if counter == 0:
+                passZeroCounter += 1
+            if counter < minvalue:
+                counter = maxvalue
 
+    def rotate(amount, isPositive):
+        if isPositive:
+            add(amount)
+        else:
+            sub(amount)
 
-end = time.perf_counter()
+    def parse(inputLine):
+        direction = inputLine[0]
+        amount = int(inputLine[1:])
 
-print(f"Execution time: {end - start:.6f} seconds")
+        if direction == "R":
+            rotate(amount, True)
+        elif direction == "L":
+            rotate(amount, False)
+
+    for l in lines:
+        parse(l)
+
+    return passZeroCounter
+
+run_day(
+    day=1,
+    part1_solver=solve_part1,
+    part2_solver=solve_part2,
+    test_part1=None,  # No test input available
+    test_part2=None
+)

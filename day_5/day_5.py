@@ -1,182 +1,150 @@
-import re
-import time
-from xmlrpc.client import MAXINT
+import sys
+from pathlib import Path
 
+# Add parent directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-def checkAgainstAllRanges(ingr, ranges):
-    isFresh = False
-    
-    for r in ranges:
-        if checkAgainstRange(ingr, r):
-            isFresh = True
-            break
-        
-    return isFresh
-        
+from aoc_helper import run_day
 
 def checkAgainstRange(ingr, range):
     r = range.split('-')
     rStart = int(r[0])
     rEnd = int(r[1])
-    
+
     ingr = int(ingr)
-    
+
     return ingr >= rStart and ingr <= rEnd
 
-def execute(p):
+def checkAgainstAllRanges(ingr, ranges):
+    isFresh = False
+
+    for r in ranges:
+        if checkAgainstRange(ingr, r):
+            isFresh = True
+            break
+
+    return isFresh
+
+def execute(ranges, p):
     for i in range(len(ranges)):
         if ranges[i] == "REMOVED":
             continue
-        
+
         ra = ranges[i]
         r = ra.split('-')
         rStart = int(r[0])
         rEnd = int(r[1])
-                
+
         for j in range(len(ranges)):
             if i == j:
                 continue
-            
+
             ra2 = ranges[j]
             if ra2 == "REMOVED":
                 continue
-            
+
             r2 = ra2.split('-')
             rStart2 = int(r2[0])
             rEnd2 = int(r2[1])
-            
-            
-            if rStart >= rStart2 and rEnd <= rEnd2: # Entirely within another
+
+            if rStart >= rStart2 and rEnd <= rEnd2:  # Entirely within another
                 ranges[i] = "REMOVED"
                 break
-            
-            elif rStart <= rStart2 and rEnd >= rEnd2: # Will remove this one in a future iteration
+
+            elif rStart <= rStart2 and rEnd >= rEnd2:  # Will remove this one in a future iteration
                 continue
-            
-            elif rStart <= rEnd2 and rEnd > rEnd2: # goes beyond another range, eg. 3-8 goes beyond 2-5, cut to 6-8
-                rStart = rEnd2 + 1 # change start to 6
-                ranges[i] = str(rStart) + '-' + str(rEnd) 
-                if p: print(f"For range {ra}: case 1, making it {rStart}-{rEnd}")
-                
-            elif rEnd >= rStart2 and rStart < rStart2: # the end of the range overlaps, eh. 2-5 overlaps 4-6, cut to 2-3
+
+            elif rStart <= rEnd2 and rEnd > rEnd2:  # goes beyond another range, eg. 3-8 goes beyond 2-5, cut to 6-8
+                rStart = rEnd2 + 1  # change start to 6
+                ranges[i] = str(rStart) + '-' + str(rEnd)
+                if p:
+                    print(f"For range {ra}: case 1, making it {rStart}-{rEnd}")
+
+            elif rEnd >= rStart2 and rStart < rStart2:  # the end of the range overlaps, eh. 2-5 overlaps 4-6, cut to 2-3
                 rEnd = rStart2 - 1
                 ranges[i] = str(rStart) + '-' + str(rEnd)
-                if p: print(f"For range {ra}: case 2, making it {rStart}-{rEnd}")
+                if p:
+                    print(f"For range {ra}: case 2, making it {rStart}-{rEnd}")
             else:
-                if p: print(f"For range {ra}: case 3, making it {rStart}-{rEnd}")
+                if p:
+                    print(f"For range {ra}: case 3, making it {rStart}-{rEnd}")
 
-
-def countUp(p):
+def countUp(ranges, p):
     totalIds = 0
-    
+
     ranges.sort()
     for r in ranges:
         if r == "REMOVED":
-            if p: print(f"Range {r} adds none")
+            if p:
+                print(f"Range {r} adds none")
             continue
-            
+
         r = r.split('-')
         rStart = int(r[0])
         rEnd = int(r[1])
-        
-        if p: print(f"Range {r} adds {rEnd - (rStart - 1)}")
-        
+
+        if p:
+            print(f"Range {r} adds {rEnd - (rStart - 1)}")
+
         totalIds += rEnd - (rStart - 1)
     return totalIds
 
-with open("day_5/input.txt") as f:
-    lines = f.read().splitlines()
-    
-    start = time.perf_counter()
-
-
+def solve_part1(lines):
     ranges = []
     ingredients = []
     swap = False
-    
-    for i in range(len(lines)):  
-        
+
+    for i in range(len(lines)):
         if lines[i] == '':
             swap = True
             continue
-        
-        if swap: 
+
+        if swap:
             ingredients.append(lines[i])
         else:
             ranges.append(lines[i])
-            
-    #print(f"Ranges are: {ranges}\nIngredeients are: {ingredients}")
-    
+
     totalFresh = 0
-    
+
     for ingr in ingredients:
         if checkAgainstAllRanges(ingr, ranges):
             totalFresh += 1
-        
-    end = time.perf_counter()
-    
-    print(f"Part 1 execution time: {end - start:.6f} seconds")
-            
-    print(f"Total amount of fresh ingredients: {totalFresh}")
-    
-    # ============ PART 2 ===============
-    
-    start = time.perf_counter()
-    
-    execute(False)
-    currentTotal = countUp(False) 
-    
+
+    return totalFresh
+
+def solve_part2(lines):
+    ranges = []
+    swap = False
+
+    for i in range(len(lines)):
+        if lines[i] == '':
+            swap = True
+            continue
+
+        if not swap:
+            ranges.append(lines[i])
+
+    execute(ranges, False)
+    currentTotal = countUp(ranges, False)
+
     iterations = 0
     diff = True
     while diff:
         iterations += 1
-        
-        execute(False)
-        newTotal = countUp(False) 
-        
+
+        execute(ranges, False)
+        newTotal = countUp(ranges, False)
+
         diff = newTotal != currentTotal
-        
+
         currentTotal = newTotal
-    
-    end = time.perf_counter()
-    
-    print(f"Part 2 execution time: {end - start:.6f} seconds")
 
-        
-    
-    print(f"Total amount of fresh ids after {iterations} runs:  {currentTotal}")
-    
-        
-        
-    '''
-    #print(f"for range {rStart} to {rEnd}, a total of {rEnd - (rStart - 1)} are added")
-    
-    if rEnd < prevHigh:
-        print(f"for range {rStart} to {rEnd} with a prevhigh of {prevHigh}, None are added")
-        continue
-    
-    totalIds += rEnd - max((rStart - 1), prevHigh)
-    
-    print(f"for range {rStart} to {rEnd} with a prevhigh of {prevHigh}, a total of {rEnd - max((rStart - 1), prevHigh)} are added")
+    return currentTotal
 
-    
-    prevHigh = rEnd
-    '''
-        
-        
-        
-            
-            
-'''
-3-5
-10-14
-16-20
-12-18
-
-1
-5
-8
-11
-17
-32
-'''
+run_day(
+    day=5,
+    part1_solver=solve_part1,
+    part2_solver=solve_part2,
+    test_part1=None,  # Add expected test answer if known
+    test_part2=None
+)
