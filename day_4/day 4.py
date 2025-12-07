@@ -52,8 +52,6 @@ with open("day_4/day_4_input.txt") as f:
     
     #lines = example_list
     
-    
-    
     changes = 1
     
     while changes > 0:
@@ -80,39 +78,3 @@ with open("day_4/day_4_input.txt") as f:
             print("")
     
 print(f"Part 1, total amount of Paper Rolls which can be accessed by forklifts: {rollCounter}")
-
-'''
-..@@.@@@@.
-@@@.@.@.@@
-@@@@@.@.@@
-@.@@@@..@.
-@@.@@@@.@@
-.@@@@@@@.@
-.@.@.@.@@@
-@.@@@.@@@@
-.@@@@@@@@.
-@.@.@@@.@.
-
-
-..xx.xx@x.
-x@@.@.@.@@
-@@@@@.x.@@
-@.@@@@..@.
-x@.@@@@.@x
-.@@@@@@@.@
-.@.@.@.@@@
-x.@@@.@@@@
-.@@@@@@@@.
-x.x.@@@.x.
-
-..........
-..........
-..........
-...x@@....
-...@@@@...
-...@@@@@..
-...@.@.@@.
-...@@.@@@.
-...@@@@@..
-....@@@...
-'''

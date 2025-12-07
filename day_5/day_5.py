@@ -145,6 +145,6 @@ run_day(
     day=5,
     part1_solver=solve_part1,
     part2_solver=solve_part2,
-    test_part1=None,  # Add expected test answer if known
-    test_part2=None
+    test_part1=3,  # Add expected test answer if known
+    test_part2=14
 )
