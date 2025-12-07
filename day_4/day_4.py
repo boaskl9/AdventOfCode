@@ -47,8 +47,31 @@ def solve_part1(lines):
     lines = [line for line in lines]
 
     rollCounter = 0
+
+    # Part 1: Only ONE iteration (single pass)
+    for i in range(len(lines)):
+        for j in range(len(lines[i])):
+            if lines[i][j] == '.':
+                pass  # Empty space
+            else:
+                if eval(lines, i, j):
+                    rollCounter += 1
+
+                    before = lines[i][:j]
+                    after = lines[i][j+1:]
+
+                    lines[i] = before + '.' + after
+
+    return rollCounter
+
+def solve_part2(lines):
+    # Make a mutable copy of lines as we'll be modifying them
+    lines = [line for line in lines]
+
+    rollCounter = 0
     changes = 1
 
+    # Part 2: Loop until no more changes (convergence)
     while changes > 0:
         changes = 0
 
@@ -67,10 +90,6 @@ def solve_part1(lines):
                         changes += 1
 
     return rollCounter
-
-def solve_part2(lines):
-    # Part 2 not yet implemented - placeholder
-    return 0
 
 run_day(
     day=4,
