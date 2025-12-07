@@ -57,11 +57,6 @@ def solve_part1(lines):
                 if eval(lines, i, j):
                     rollCounter += 1
 
-                    before = lines[i][:j]
-                    after = lines[i][j+1:]
-
-                    lines[i] = before + '.' + after
-
     return rollCounter
 
 def solve_part2(lines):
