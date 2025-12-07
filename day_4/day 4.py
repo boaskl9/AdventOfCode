@@ -47,7 +47,7 @@ def eval(i, j):
 
 rollCounter = 0
 
-with open("day_4/day_4_input.txt") as f:
+with open("day_4/input.txt") as f:
     lines = f.read().splitlines()
     
     #lines = example_list
