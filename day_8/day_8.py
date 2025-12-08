@@ -123,13 +123,13 @@ def solve_part1(lines):
     else:
         connectionsToMake = 1000
     
-    while connectionsMade < connectionsToMake - 1:
+    while connectionsMade < connectionsToMake:
         (_, p0, p1) = dists.pop(0)
         
         if p0.getCir() != p1.getCir():
             p0.getCir().add(p1)
             #print(f"circuit {p0.getCir().getId()} now has {len(p0.getCir().getPoints())}")
-            connectionsMade +=1
+        connectionsMade +=1
 
     circuits.sort(key=lambda d: d.getLen(), reverse=True)
         
