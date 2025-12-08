@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day 8 - 3D Circuit Visualization</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        #slider-container {
+            margin-top: 10px;
+        }
+        input[type="range"] {
+            width: 100%;
+        }
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        .stat {
+            margin: 5px 0;
+        }
+        .highlight {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="info">
+        <h2>🎄 Day 8: Circuit Visualization</h2>
+        <div class="stat">Junction Boxes: <span class="highlight" id="num-points">0</span></div>
+        <div class="stat">Connections Shown: <span class="highlight" id="num-connections">0</span></div>
+        <div class="stat">Circuits: <span class="highlight" id="num-circuits">0</span></div>
+        <div class="stat" id="circuit-sizes"></div>
+        <div style="margin-top: 10px; font-size: 12px; color: #aaa;">
+            🖱️ Drag to rotate<br>
+            🔍 Scroll to zoom
+        </div>
+    </div>
+    <div id="controls">
+        <button id="animate-btn">▶️ Animate Connections</button>
+        <button id="reset-btn">🔄 Reset</button>
+        <button id="show-all-btn">Show All (1000)</button>
+        <div id="slider-container">
+            <label for="connection-slider">Connections: <span id="slider-value">0</span></label>
+            <input type="range" id="connection-slider" min="0" max="1000" value="0" step="1">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Parse input data - will be injected by Python script
+        const INPUT_DATA = `__INPUT_DATA__`;
+
+        // Parse points from input
+        const points = INPUT_DATA.trim().split('\n').map(line => {
+            const [x, y, z] = line.split(',').map(Number);
+            return { x, y, z };
+        });
+
+        // Union-Find data structure for circuits
+        class UnionFind {
+            constructor(n) {
+                this.parent = Array.from({ length: n }, (_, i) => i);
+                this.size = Array(n).fill(1);
+            }
+
+            find(x) {
+                if (this.parent[x] !== x) {
+                    this.parent[x] = this.find(this.parent[x]);
+                }
+                return this.parent[x];
+            }
+
+            union(x, y) {
+                const rootX = this.find(x);
+                const rootY = this.find(y);
+
+                if (rootX === rootY) return false;
+
+                if (this.size[rootX] < this.size[rootY]) {
+                    this.parent[rootX] = rootY;
+                    this.size[rootY] += this.size[rootX];
+                } else {
+                    this.parent[rootY] = rootX;
+                    this.size[rootX] += this.size[rootY];
+                }
+                return true;
+            }
+
+            getCircuitSizes() {
+                const circuits = new Map();
+                for (let i = 0; i < this.parent.length; i++) {
+                    const root = this.find(i);
+                    circuits.set(root, (circuits.get(root) || 0) + 1);
+                }
+                return Array.from(circuits.values()).sort((a, b) => b - a);
+            }
+        }
+
+        // Calculate all pairwise distances
+        function calculateDistances(points) {
+            const distances = [];
+            for (let i = 0; i < points.length; i++) {
+                for (let j = i + 1; j < points.length; j++) {
+                    const dx = points[i].x - points[j].x;
+                    const dy = points[i].y - points[j].y;
+                    const dz = points[i].z - points[j].z;
+                    const distSq = dx * dx + dy * dy + dz * dz;
+                    distances.push({ dist: distSq, i, j });
+                }
+            }
+            distances.sort((a, b) => a.dist - b.dist);
+            return distances;
+        }
+
+        // Calculate connections in order
+        const allDistances = calculateDistances(points);
+        const orderedConnections = [];
+        const uf = new UnionFind(points.length);
+
+        for (const { i, j } of allDistances) {
+            if (uf.union(i, j)) {
+                orderedConnections.push({ i, j });
+                if (orderedConnections.length >= 1000) break;
+            }
+        }
+
+        // Three.js setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a0a);
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000000
+        );
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        // Normalize coordinates to center and scale
+        const centerX = points.reduce((sum, p) => sum + p.x, 0) / points.length;
+        const centerY = points.reduce((sum, p) => sum + p.y, 0) / points.length;
+        const centerZ = points.reduce((sum, p) => sum + p.z, 0) / points.length;
+
+        const normalizedPoints = points.map(p => ({
+            x: (p.x - centerX) / 500,
+            y: (p.y - centerY) / 500,
+            z: (p.z - centerZ) / 500
+        }));
+
+        // Create junction box points
+        const pointsGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(normalizedPoints.length * 3);
+        normalizedPoints.forEach((p, i) => {
+            positions[i * 3] = p.x;
+            positions[i * 3 + 1] = p.y;
+            positions[i * 3 + 2] = p.z;
+        });
+        pointsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const pointsMaterial = new THREE.PointsMaterial({
+            color: 0x00ffff,
+            size: 2,
+            sizeAttenuation: false
+        });
+
+        const pointCloud = new THREE.Points(pointsGeometry, pointsMaterial);
+        scene.add(pointCloud);
+
+        // Create connection lines
+        const lineMaterial = new THREE.LineBasicMaterial({ vertexColors: true });
+        const lineSegments = [];
+
+        function createConnectionLine(i, j, connectionIndex) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array([
+                normalizedPoints[i].x, normalizedPoints[i].y, normalizedPoints[i].z,
+                normalizedPoints[j].x, normalizedPoints[j].y, normalizedPoints[j].z
+            ]);
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            // Color gradient from blue (early) to red (late)
+            const ratio = connectionIndex / orderedConnections.length;
+            const color = new THREE.Color();
+            color.setHSL(0.6 - ratio * 0.6, 1.0, 0.5);
+
+            const colors = new Float32Array([
+                color.r, color.g, color.b,
+                color.r, color.g, color.b
+            ]);
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const line = new THREE.Line(geometry, lineMaterial);
+            line.visible = false;
+            scene.add(line);
+            return line;
+        }
+
+        // Pre-create all connection lines
+        orderedConnections.forEach((conn, idx) => {
+            lineSegments.push(createConnectionLine(conn.i, conn.j, idx));
+        });
+
+        // Camera position
+        camera.position.z = 300;
+        camera.position.y = 100;
+        camera.lookAt(0, 0, 0);
+
+        // Mouse controls
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: 0, y: 0 };
+
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - previousMousePosition.x;
+                const deltaY = e.clientY - previousMousePosition.y;
+
+                rotation.y += deltaX * 0.005;
+                rotation.x += deltaY * 0.005;
+
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            }
+        });
+
+        renderer.domElement.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        renderer.domElement.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            camera.position.z += e.deltaY * 0.1;
+            camera.position.z = Math.max(50, Math.min(500, camera.position.z));
+        });
+
+        // Update display
+        function updateConnections(numConnections) {
+            lineSegments.forEach((line, idx) => {
+                line.visible = idx < numConnections;
+            });
+
+            // Calculate circuit statistics
+            const uf = new UnionFind(points.length);
+            for (let i = 0; i < numConnections && i < orderedConnections.length; i++) {
+                const { i: pi, j: pj } = orderedConnections[i];
+                uf.union(pi, pj);
+            }
+
+            const circuitSizes = uf.getCircuitSizes();
+
+            document.getElementById('num-points').textContent = points.length;
+            document.getElementById('num-connections').textContent = numConnections;
+            document.getElementById('num-circuits').textContent = circuitSizes.length;
+
+            const top3 = circuitSizes.slice(0, 3);
+            if (top3.length >= 3) {
+                document.getElementById('circuit-sizes').innerHTML =
+                    `Top 3 Sizes: <span class="highlight">${top3.join(', ')}</span><br>` +
+                    `Product: <span class="highlight">${top3[0] * top3[1] * top3[2]}</span>`;
+            }
+
+            document.getElementById('slider-value').textContent = numConnections;
+        }
+
+        // Controls
+        const slider = document.getElementById('connection-slider');
+        const animateBtn = document.getElementById('animate-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const showAllBtn = document.getElementById('show-all-btn');
+
+        let animationId = null;
+        let currentConnection = 0;
+
+        slider.addEventListener('input', (e) => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                animateBtn.textContent = '▶️ Animate Connections';
+            }
+            currentConnection = parseInt(e.target.value);
+            updateConnections(currentConnection);
+        });
+
+        animateBtn.addEventListener('click', () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                animateBtn.textContent = '▶️ Animate Connections';
+            } else {
+                animateBtn.textContent = '⏸️ Pause Animation';
+                function animate() {
+                    currentConnection = Math.min(currentConnection + 2, 1000);
+                    slider.value = currentConnection;
+                    updateConnections(currentConnection);
+
+                    if (currentConnection < 1000) {
+                        animationId = requestAnimationFrame(animate);
+                    } else {
+                        animateBtn.textContent = '▶️ Animate Connections';
+                        animationId = null;
+                    }
+                }
+                animate();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                animateBtn.textContent = '▶️ Animate Connections';
+            }
+            currentConnection = 0;
+            slider.value = 0;
+            updateConnections(0);
+        });
+
+        showAllBtn.addEventListener('click', () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                animateBtn.textContent = '▶️ Animate Connections';
+            }
+            currentConnection = 1000;
+            slider.value = 1000;
+            updateConnections(1000);
+        });
+
+        // Initial update
+        updateConnections(0);
+
+        // Animation loop
+        function render() {
+            requestAnimationFrame(render);
+
+            pointCloud.rotation.x = rotation.x;
+            pointCloud.rotation.y = rotation.y;
+
+            lineSegments.forEach(line => {
+                line.rotation.x = rotation.x;
+                line.rotation.y = rotation.y;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        render();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
