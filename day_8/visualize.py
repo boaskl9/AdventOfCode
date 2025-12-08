@@ -40,23 +40,22 @@ def visualize_circuits(input_file='input.txt', num_connections=1000, show_all_co
     connections = []
     connection_order = []
 
-    # Make connections
-    connections_made = 0
-    max_connections = len(lines) - 1 if show_all_connections else num_connections
+    # Process pairs (not all pairs result in connections if already in same circuit)
+    pairs_processed = 0
+    max_pairs = len(lines) - 1 if show_all_connections else num_connections
 
-    while connections_made < max_connections:
+    while pairs_processed < max_pairs and len(dists) > 0:
         (dist, p0, p1) = dists.pop(0)
+        pairs_processed += 1
 
         if p0.getCir() != p1.getCir():
-            # Store this connection
+            # Store this connection for visualization
             x0, y0, z0 = p0.getValues()
             x1, y1, z1 = p1.getValues()
             connections.append(((x0, y0, z0), (x1, y1, z1)))
-            connection_order.append(connections_made)
 
             # Make the connection
             p0.getCir().add(p1)
-            connections_made += 1
 
     # Create 3D plot
     fig = plt.figure(figsize=(14, 10))
@@ -161,18 +160,18 @@ def create_interactive_animation(input_file='input.txt', step_size=50):
 
     # Store all connections
     all_connections = []
-    connections_made = 0
+    pairs_processed = 0
     dists_copy = dists.copy()
 
-    while connections_made < 1000:
+    while pairs_processed < 1000 and len(dists_copy) > 0:
         (dist, p0, p1) = dists_copy.pop(0)
+        pairs_processed += 1
 
         if p0.getCir() != p1.getCir():
             x0, y0, z0 = p0.getValues()
             x1, y1, z1 = p1.getValues()
             all_connections.append(((x0, y0, z0), (x1, y1, z1)))
             p0.getCir().add(p1)
-            connections_made += 1
 
     # Animation function
     lines_collection = []
