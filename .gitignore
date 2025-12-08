@@ -1,1 +1,6 @@
 __pycache__/
+
+# Generated visualization files
+circuit_visualization.html
+circuit_visualization_*.png
+circuit_animation.gif
