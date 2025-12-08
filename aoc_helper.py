@@ -69,6 +69,35 @@ def run_solution(
     
     return result
 
+def run_test(
+    day: int,
+    part1_solver: Callable[[list[str]], Any],
+    part2_solver: Callable[[list[str]], Any],
+    test_part1: Optional[Any] = None,
+    test_part2: Optional[Any] = None,
+    base_path: str = "."
+):
+    """
+    Run both parts on test and real input with timing and validation
+    
+    Args:
+        day: Day number
+        part1_solver: Function for part 1
+        part2_solver: Function for part 2
+        test_part1: Expected answer for test input part 1
+        test_part2: Expected answer for test input part 2
+        base_path: Base path for input files (default: current directory)
+    """
+    day_path = f"{base_path}/day_{day}"
+    
+    # Test input
+    print(f"{Colors.CYAN}{Colors.BOLD}{'='*50}{Colors.RESET}")
+    print(f"{Colors.CYAN}{Colors.BOLD}DAY {day} - TEST INPUT{Colors.RESET}")
+    print(f"{Colors.CYAN}{Colors.BOLD}{'='*50}{Colors.RESET}")
+    
+    run_solution(part1_solver, f"{day_path}/test_input.txt", 1, test_part1)
+    run_solution(part2_solver, f"{day_path}/test_input.txt", 2, test_part2)
+
 
 def run_day(
     day: int,
