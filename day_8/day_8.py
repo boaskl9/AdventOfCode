@@ -21,19 +21,13 @@ class Circuit:
         return self.id
         
     def add(self, point):
-        #print("Tring to add: ", end="")
-        #print(point, end=" ")
         oldCir = point.getCir()
-        #print(f"which is currently in {oldCir.getId()} with len {len(oldCir.getPoints())}")
-
         
         for p in  oldCir.getPoints():
-            #print("---------")
             self.points.append(p)
             p.setCir(self)
         
         oldCir.clear()
-    
 
     def clear(self):
         self.points = []
@@ -125,16 +119,13 @@ def solve_part1(lines):
     
     while connectionsMade < connectionsToMake:
         (_, p0, p1) = dists.pop(0)
+        connectionsMade +=1
         
         if p0.getCir() != p1.getCir():
             p0.getCir().add(p1)
-            #print(f"circuit {p0.getCir().getId()} now has {len(p0.getCir().getPoints())}")
-        connectionsMade +=1
 
     circuits.sort(key=lambda d: d.getLen(), reverse=True)
-        
-    print(f"{circuits[0].getLen()} * {circuits[1].getLen()} * {circuits[2].getLen()}")
-    
+            
     return circuits[0].getLen() * circuits[1].getLen() * circuits[2].getLen()
 
 def solve_part2(lines):
@@ -159,20 +150,15 @@ def solve_part2(lines):
         
         if p0.getCir() != p1.getCir():
             p0.getCir().add(p1)
-            #print(f"circuit {p0.getCir().getId()} now has {len(p0.getCir().getPoints())}")
             connectionsMade +=1
             lastp0 = p0
             lastp1 = p1
             
-    
     xp0, _, _ = lastp0.getValues()
     xp1, _, _ = lastp1.getValues()
 
-
     circuits.sort(key=lambda d: d.getLen(), reverse=True)
-        
-    print(f"{xp0} * {xp1}")
-    
+            
     return xp0 * xp1
 
 run_day(
