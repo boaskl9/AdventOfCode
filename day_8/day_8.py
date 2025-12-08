@@ -138,13 +138,47 @@ def solve_part1(lines):
     return circuits[0].getLen() * circuits[1].getLen() * circuits[2].getLen()
 
 def solve_part2(lines):
-    # Your solution here
-    return
+    circuits = []
+    points = []
+    for l in lines:
+        p = lineToPoint(l)
+        c = Circuit(p)
+        p.setCir(c)
+        circuits.append(c)
+        points.append(p)
+                
+    dists = findShortest(points)
+        
+    connectionsMade = 0
+    
+    lastp0 = Point(0,0,0)    
+    lastp1 = Point(0,0,0)
+        
+    while connectionsMade < len(lines) - 1:
+        (_, p0, p1) = dists.pop(0)
+        
+        if p0.getCir() != p1.getCir():
+            p0.getCir().add(p1)
+            #print(f"circuit {p0.getCir().getId()} now has {len(p0.getCir().getPoints())}")
+            connectionsMade +=1
+            lastp0 = p0
+            lastp1 = p1
+            
+    
+    xp0, _, _ = lastp0.getValues()
+    xp1, _, _ = lastp1.getValues()
+
+
+    circuits.sort(key=lambda d: d.getLen(), reverse=True)
+        
+    print(f"{xp0} * {xp1}")
+    
+    return xp0 * xp1
 
 run_day(
     day=8,
     part1_solver=solve_part1,
     part2_solver=solve_part2,
     test_part1=40,  # Expected test answers
-    test_part2=None
+    test_part2=25272
 )
