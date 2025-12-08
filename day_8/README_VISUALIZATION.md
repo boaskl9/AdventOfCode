@@ -22,19 +22,22 @@ pip install matplotlib
 
 **Usage:**
 ```bash
-# Run the visualization (creates two plots: Part 1 and Part 2)
+# Run the interactive visualization (default)
 python visualize.py
 
-# The script will:
-# - Create circuit_visualization_part1.png (1000 connections)
-# - Create circuit_visualization_all.png (all connections until one circuit)
-# - Display interactive plots you can rotate and zoom
+# Or create a static image
+python visualize.py --static
 ```
 
-**Controls in matplotlib window:**
-- Click and drag to rotate the 3D view
-- Scroll to zoom in/out
-- Use the toolbar to pan, zoom, or save the image
+**Interactive Mode Features:**
+- **Slider**: Step through connections from 0 to 1000 pairs
+- **Circuit Coloring**: Each circuit has a unique color (watch them merge!)
+- **Real-time Stats**: See circuit counts, sizes, and puzzle answers update
+- **3D Controls**: Drag to rotate, scroll to zoom
+
+**Static Mode:**
+- Creates a saved PNG image of the final state (1000 pairs processed)
+- Good for documentation or presentations
 
 ---
 
@@ -69,16 +72,15 @@ python generate_visualization.py
 
 ## What the Visualization Shows
 
-### Junction Boxes (Blue/Cyan Points)
+### Junction Boxes (Colored Points)
 - Each point represents a junction box at coordinates (X, Y, Z)
 - Your input has **999 junction boxes**
+- **Colors represent circuits**: Points in the same circuit share the same color
 
 ### Connections (Colored Lines)
 - Lines connect junction boxes in order of their distance (closest pairs first)
-- Color coding:
-  - **Blue/Purple**: Early connections (closest pairs)
-  - **Green/Yellow**: Middle connections
-  - **Red/Orange**: Later connections (farther pairs)
+- **Color coding**: Lines are colored to match the circuit they belong to
+- Watch circuits merge as you move the slider forward!
 
 ### Circuit Statistics
 The visualization displays:
