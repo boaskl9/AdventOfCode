@@ -1,6 +1,8 @@
 from cmath import sqrt
 import sys
 from pathlib import Path
+import time
+from tracemalloc import start
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -115,7 +117,6 @@ def isBetween(p1, p2, pCheck):
     p1XisSmaller = p1.x < p2.x
     p1YisSmaller = p1.y < p2.y
     
-    
     smallX = 0
     largeX = 0
     smallY = 0
@@ -186,6 +187,8 @@ def checkIfLegal(p1Index, p2Index, points):
             lowY = min (currentPoint.y, pCheck.y)
             
             for j in range(abs(currentPoint.y - pCheck.y) + 1):
+                #if j % 1000 != 0: continue
+                
                 newPoint = Point(pCheck.x, lowY + j)
                 
                 if isBetween(p1, p2, newPoint):
@@ -212,6 +215,7 @@ def checkIfLegal(p1Index, p2Index, points):
             lowX = min (currentPoint.x, pCheck.x)
             
             for j in range(abs(currentPoint.x - pCheck.x) + 1):
+                # if j % 1000 != 0: continue
                 newPoint = Point(lowX + j, pCheck.y)
                 
                 if isBetween(p1, p2, newPoint):
@@ -237,12 +241,18 @@ def solve_part2(lines):
     
     points = getPoints(lines)
     
-    print(f"Current check {checkIfLegal(1, 3, points)}")
+    checks = 0
+    
+    start = time.perf_counter()
     
     for p1 in range(len(points)):
         for p2 in range(len(points)):
             if p2 <= p1: continue # Do only each pair once.
+            checks+=1
             
+            if checks % 1000 == 0:
+                print(f"Checked {checks} pairs, and it took {time.perf_counter() - start} seconds so far")
+                
             area = calculateArea(points[p1], points[p2])
             if area > highestArea:    
                 if checkIfLegal(p1, p2, points):
