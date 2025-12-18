@@ -137,84 +137,175 @@ def joltDiffs(corretJoltage, counter):
         
     return joltageDiff
 
+class ChoiceList():
+    def __init__(self, choices, n):
+        self.choices = choices
+        
+    def printLst(self):
+        for c in self.choices:
+            for b in c:
+                print(b, end=' ')
+            print("")
+            
+    def makeChoice(self):
+        for c in self.choices:
+            if len(c) > 0:
+                b = c[0]
+                self.choices.remove(c)
+                return b
+        
+        print("ERROR: no choices to make?")
+        return -1
+    
+    def isEmpty(self):
+        return len(self.choices) <= 0
+        
+    def removeButton(self, index):
+        removed = False
+        for c in range(len(self.choices)):
+            indexToRemove = []
+            for b in range(len(self.choices[c])):
+                if index in self.choices[c][b].values:
+                    indexToRemove.append(b)
+                    removed = True
+
+            indexToRemove.sort(reverse=True)
+            for i in indexToRemove:
+                self.choices[c].pop(i)
+                
+            if len(self.choices[c]) == 0:
+                self.choices.remove(self.choices[c])
+                
+            if removed: break
+                    
+
+                
 def findLeastPressesPart2(machine) -> int:
     corretJoltage = machine.joltage
     buttons = machine.buttons
     
     joltageCounters = [0] * len(corretJoltage)    
-    #Print(f"correct joltage: {corretJoltage}\nTemplate joltage: {joltageCounterTemplate}")
     
-    allCounters = [joltageCounters]
-    allCounters2 = []
+    choiceLists = []
     
-    maxIter = 1000
+    jdiffs = joltDiffs(corretJoltage, joltageCounters)
+    jdiffs.sort(key=lambda v: v[1], reverse=True)
+    jdiffs = jdiffs[1:] #[(0, 7), (3, 7), (1, 5), (4, 2)]
     
-    stepsTaken = 0
-    while stepsTaken < maxIter:
-        stepsTaken += 1
-        input(f"all {len(allCounters)}") # \n counters: {allCounters}
-        for counter in allCounters:
+    for i in range(len(corretJoltage)):
+       
+        choicesList = []
+        for no in range(corretJoltage[i]):
+            buttonList = []
             
-            joltageDiff = joltDiffs(corretJoltage, counter)
-
-            joltageDiff.sort(key=lambda j: j[1], reverse=True)
-            
-            candidateButtons = []
-            
-            indiciesToMax = []
-            
-            _, maxDiff = joltageDiff[0]
-            
-            for j in joltageDiff:
-                (i, diff) = j
-                if diff == maxDiff:
-                    indiciesToMax.append(i)
-                else:
-                    break
-            
-            # Find buttons to press           
             for b in buttons:
-                #print(b)
-                for index in indiciesToMax:
-                    if index in b.values:
-                        # press the button to see if its valid:
-                        newCounter = pressButtonPart2(counter.copy(), b)
-                        newDiffs = joltDiffs(corretJoltage, newCounter)
-                        wentTooFar = False
-                        for _, diff in newDiffs:
-                            if diff < 0:
-                                wentTooFar = True
-                                break
-                            
-                        if wentTooFar:
-                            continue
-                        
-                        candidateButtons.append(b)
+                if i in b.values:
+                    buttonList.append(b)             
+                    
+            choicesList.append(buttonList.copy())
             
-            # Press buttons
-            for b in candidateButtons:
-                newCounter = pressButtonPart2(counter.copy(), b)
-                
-                if newCounter not in allCounters2: 
-                    allCounters2.append(newCounter)
-                
-        allCounters = allCounters2.copy()
+        # after all buttons have been added to all choices, it's time to prune the choices of excess buttons.
+        print(f"Now pruning choice list '{i}'")
 
-        # Sort by sum in descending order and take top 100
-        allCounters.sort(key=lambda c: sum(c), reverse=True)
-        filtered = allCounters[:1000]
+        buttonsToRemove = [] #[(0, 7), (3, 7), (1, 5), (4, 2)]
+        for j in range(len(jdiffs)):
+            index, maxAmount = jdiffs[j]
+            startAmount = 0
+            for c in choicesList:
+                for b in c:
+                    if index in b.values:
+                        startAmount += 1
+                        continue
+            removedAmount = 0
+            
+            
+            for cI in range(len(choicesList)):
+                print(f"cI: {cI}")
+                c = choicesList[cI]
+                foundInChoice = False
                 
-        allCounters = filtered         
-        
-        allCounters2.clear()
-        
-        if corretJoltage in allCounters:
-            return stepsTaken 
+                if len(choicesList) - removedAmount == maxAmount or startAmount - removedAmount <= maxAmount:
+                    break # we have removed enough
                 
-            #for b in candidateButtons:
-            #    print(b)
-        
+                buttonsToRemove = []  # Move this inside the cI loop
+                
+                for bI in range(len(c)):
+                    b = c[bI]
+                    if index in b.values and len(c) > 1:
+                        buttonsToRemove.append(b)
+                        print(f"MARK FOR REMOVE: {b}")
+                        foundInChoice = True
+                
+                if len(buttonsToRemove) == len(c):
+                    print(f"REMOVE MARKs FOR REMOVE!")
+                    foundInChoice = False
+                    buttonsToRemove.clear()
+                    
+                
+                if foundInChoice:
+                    removedAmount += 1
+                    
+                print(f"print all choices")
+                for c_display in choicesList:
+                    for b in c_display:
+                        print(f"b: {b}", end=" ")
+                    print("")
+                
+                # Remove buttons from THIS specific choice
+                for b in buttonsToRemove:
+                    print("TRY TO REMOVE", end=": ")
+                    if b in c:
+                        print("SUCESS")
+                        c.remove(b)
+                    else:
+                        print("FAILURE")
+                
+                print(f"removed amount: {removedAmount}")
 
+                    
+        print(f"=========\n\n=========")
+                        
+                
+        choiceList = ChoiceList(choicesList, corretJoltage[i])
+        
+        choiceLists.append(choiceList)
+    
+    maxIter = 100
+    currentStep = 0
+    
+    currentLst = 0
+    
+    while currentStep < maxIter:
+        currentStep += 1
+
+        for i in range(len(choiceLists)):
+            if not choiceLists[i].isEmpty():
+                currentLst = i
+                break
+            elif i == len(choiceLists) - 1:
+                return currentStep
+ 
+        
+        print(f"print all choices, and pick from '#{currentLst}'")
+        for c in range(len(choiceLists)):
+            print(f"#{c}")
+            choiceLists[c].printLst()
+            print("")
+                    
+        b = choiceLists[currentLst].makeChoice()
+        print(f"picked button {b}")
+        
+        buttonValues = b.values
+        
+        for c in choiceLists:
+            if c != choiceLists[currentLst]:
+                for v in buttonValues:
+                    c.removeButton(v)
+            
+        joltageCounters = pressButtonPart2(joltageCounters, b)
+        
+        print(f"joltage counter: {joltageCounters}")
+        
     return -1
 
 def buildMachines(lines):
@@ -236,7 +327,7 @@ def solve_part1(lines):
         
     sum = 0
     for m in machines:
-        break
+        break # skip part 1 for now.
         sum += findLeastPressesPart1(m, 8)
 
     return sum
@@ -253,7 +344,13 @@ def simulateSolve(machine):
     stepCounter = 0
     while notSolved:
         stepCounter += 1
-        pick = input(f"\n\nCurrent joltage: {joltageCounter}\nTarget joltage:  {machine.joltage}\nButtons available: {buttonStr}")
+        jDiffs = joltDiffs(machine.joltage, joltageCounter)
+        diffs = [pair[1] for pair in jDiffs]
+
+        pick = input(f"\n\nCurrent joltage: {joltageCounter}\nTarget joltage:  {machine.joltage}\ndifferences:     {diffs}\nButtons available: {buttonStr}")
+        
+        if pick == "exit" or pick == 'q':
+            quit()
         
         joltageCounter = pressButtonPart2(joltageCounter, machine.buttons[int(pick)])
         
@@ -267,18 +364,19 @@ def solve_part2(lines):
     idCounter = 0
     
     machines = buildMachines(lines)
-        
-    sum = 0
+    
+    #simulateSolve(machines[0])
+    '''sum = 0
     for m in machines:
         print(m)
         sum += findLeastPressesPart2(m)
-        print("\n---------------------------------\n")
+        print("\n---------------------------------\n")'''
 
-    return sum
+    return findLeastPressesPart2(machines[1]) #findLeastPressesPart2(machines[0]) + findLeastPressesPart2(machines[1]) + findLeastPressesPart2(machines[2])
 
 
 
-run_day(
+run_test(
     day=10,
     part1_solver=solve_part1,
     part2_solver=solve_part2,
